@@ -1,0 +1,36 @@
+name: Validate Pull Request
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  validate-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check if PR template is filled out
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const body = context.payload.pull_request.body || "";
+            if (!body.includes("Confirmation of Functionality")) {
+              core.setFailed("Please fill out the 'Confirmation of Functionality' section in the Pull Request template.");
+            }
+
+  run-tests:
+    needs: validate-pr
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Run tests for all components
+        run: |
+          cargo test --workspace --all-features
